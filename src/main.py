@@ -15,6 +15,20 @@ def simple_convert_into_pi_from_theta(theta):
     return pi
 
 
+def softmax_convert_into_pi_from_theta(theta):
+    beta = 1.0
+    [m, n] = theta.shape
+    pi = np.zeros((m, n))
+
+    exp_theta = np.exp(beta*theta)
+
+    for i in range(0, m):
+        pi[i, :] = exp_theta[i, :] / np.nansum(exp_theta[i, :])
+
+    pi = np.nan_to_num(pi)
+    return pi
+
+
 def get_next_s(pi, s):
     direction = ['up', 'right', 'down', 'left']
     next_direction = np.random.choice(direction, p=pi[s, :])
@@ -29,6 +43,44 @@ def get_next_s(pi, s):
         s_next = s - 1
 
     return s_next
+
+
+def get_action_and_next_s(pi, s):
+    direction = ['up', 'right', 'down', 'left']
+    next_direction = np.random.choice(direction, p=pi[s, :])
+
+    if next_direction == 'up':
+        action = 0
+        s_next = s - 3
+    elif next_direction == 'right':
+        action = 1
+        s_next = s + 1
+    elif next_direction == 'down':
+        action = 2
+        s_next = s + 3
+    else:
+        actoin = 3
+        s_next = s - 1
+
+    return [action, s_next]
+
+
+def goal_maze_ret_s_a(pi):
+    s = 0
+    s_a_history = [[0, np.nan]]
+
+    while(1):
+        [action, next_s] = get_action_and_next_s(pi, s)
+        s_a_history[-1][1] = action
+
+        s_a_history.append([next_s,, np.nan])
+
+        if next_s == 8:
+            break
+        else:
+            s = next_s
+
+    return s_a_history
 
 
 def goal_maze(pi):
@@ -90,6 +142,7 @@ line, =ax.plot([0.5], [2.5], marker='o', color='g', markersize=60)
 
 # plt.show()
 
+#                    up, right, down, left
 theta_0 = np.array([[np.nan, 1, 1, np.nan],
                     [np.nan, 1, np.nan, 1],
                     [np.nan, np.nan, 1, 1],
@@ -112,3 +165,4 @@ anim = animation.FuncAnimation(fig, animate,
 init_func=init, frames=len(state_history), interval=200, repeat=False)
 
 anim.save('solving.mp4', writer='ffmpeg')
+
