@@ -29,8 +29,7 @@ def softmax_convert_into_pi_from_theta(theta):
     return pi
 
 
-def update_theta(theta, pi, s_a_history):
-    eta = 0.1
+def update_theta(theta, pi, s_a_history, eta=0.1):
     T = len(s_a_history) - 1
 
     m, n = theta.shape
@@ -126,9 +125,9 @@ def init():
 
 
 def animate(i):
-    state = state_history[i]
+    state = s_a_history[i][0]
     x = (state%3) + 0.5
-    y = 2.5 - int(state/3)
+    y = 2.5 - state//3
     line.set_data(x, y)
     return (line,)
 
@@ -178,12 +177,46 @@ theta_0 = np.array([[np.nan, 1, 1, np.nan],
 pi_0 = simple_convert_into_pi_from_theta(theta_0)
 print(pi_0)
 
-state_history = goal_maze_ret_s_a(pi_0)
-print(state_history)
-print('step:' + str(len(state_history)-1))
+s_a_history = goal_maze_ret_s_a(pi_0)
+print(s_a_history)
+print('step:' + str(len(s_a_history)-1))
 
 #anim = animation.FuncAnimation(fig, animate,
 #init_func=init, frames=len(state_history), interval=200, repeat=False)
 
 #anim.save('solving.mp4')
 
+new_theta = update_theta(theta_0, pi_0, s_a_history)
+pi = softmax_convert_into_pi_from_theta(new_theta)
+print(pi)
+
+stop_epsilon = 10**-5
+theta = theta_0
+pi = pi_0
+
+is_continue = True
+count = 1
+while is_continue:
+    s_a_history = goal_maze_ret_s_a(pi)
+    new_theta = update_theta(theta, pi, s_a_history, eta=1.0)
+    new_pi = softmax_convert_into_pi_from_theta(new_theta)
+
+    print(np.sum(np.abs(new_pi - pi)))
+    print('迷路を解くのにかかったステップ：' + str(len(s_a_history) - 1))
+
+    if np.sum(np.abs(new_pi - pi)) < stop_epsilon:
+        is_continue = False
+    else:
+        theta = new_theta
+        pi = new_pi
+
+
+np.set_printoptions(precision=3, suppress=True)
+print(pi)
+
+
+
+anim = animation.FuncAnimation(fig, animate, init_func=init,
+                               frames=len(s_a_history), interval=200, repeat=False)
+
+anim.save('solving.mp4')
