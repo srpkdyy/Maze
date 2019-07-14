@@ -29,6 +29,26 @@ def softmax_convert_into_pi_from_theta(theta):
     return pi
 
 
+def update_theta(theta, pi, s_a_history):
+    eta = 0.1
+    T = len(s_a_history) - 1
+
+    m, n = theta.shape
+    delta_theta = theta.copy()
+
+    for i in range(m):
+        for j in range(n):
+            if not np.isnan(theta[i, j]):
+                SA_i  = [SA for SA in s_a_history if SA[0] == i]
+                SA_ij = [SA for SA in s_a_history if SA == [i, j]]
+                N_i  = len(SA_i)
+                N_ij = len(SA_ij)
+
+                delta_theta[i, j] = (N_ij - pi[i, j] * N_i) / T
+    
+    return theta + eta * delta_theta
+                
+
 def get_next_s(pi, s):
     direction = ['up', 'right', 'down', 'left']
     next_direction = np.random.choice(direction, p=pi[s, :])
@@ -59,28 +79,11 @@ def get_action_and_next_s(pi, s):
         action = 2
         s_next = s + 3
     else:
-        actoin = 3
+        action = 3
         s_next = s - 1
 
     return [action, s_next]
 
-
-def goal_maze_ret_s_a(pi):
-    s = 0
-    s_a_history = [[0, np.nan]]
-
-    while(1):
-        [action, next_s] = get_action_and_next_s(pi, s)
-        s_a_history[-1][1] = action
-
-        s_a_history.append([next_s,, np.nan])
-
-        if next_s == 8:
-            break
-        else:
-            s = next_s
-
-    return s_a_history
 
 
 def goal_maze(pi):
@@ -97,6 +100,24 @@ def goal_maze(pi):
             s = next_s
 
     return state_history
+
+
+def goal_maze_ret_s_a(pi):
+    s = 0
+    s_a_history = [[0, np.nan]]
+
+    while(1):
+        [action, next_s] = get_action_and_next_s(pi, s)
+        s_a_history[-1][1] = action
+
+        s_a_history.append([next_s, np.nan])
+
+        if next_s == 8:
+            break
+        else:
+            s = next_s
+
+    return s_a_history
 
 
 def init():
@@ -138,7 +159,7 @@ ax.set_ylim(0, 3)
 plt.tick_params(axis='both', which='both', bottom='off', top='off',
 labelbottom='off', right='off', left='off', labelleft='off')
 
-line, =ax.plot([0.5], [2.5], marker='o', color='g', markersize=60)
+line, = ax.plot([0.5], [2.5], marker='o', color='g', markersize=60)
 
 # plt.show()
 
@@ -157,12 +178,12 @@ theta_0 = np.array([[np.nan, 1, 1, np.nan],
 pi_0 = simple_convert_into_pi_from_theta(theta_0)
 print(pi_0)
 
-state_history = goal_maze(pi_0)
+state_history = goal_maze_ret_s_a(pi_0)
 print(state_history)
 print('step:' + str(len(state_history)-1))
 
-anim = animation.FuncAnimation(fig, animate,
-init_func=init, frames=len(state_history), interval=200, repeat=False)
+#anim = animation.FuncAnimation(fig, animate,
+#init_func=init, frames=len(state_history), interval=200, repeat=False)
 
-anim.save('solving.mp4', writer='ffmpeg')
+#anim.save('solving.mp4')
 
